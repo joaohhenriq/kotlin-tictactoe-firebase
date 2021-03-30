@@ -1,5 +1,6 @@
 package com.joaohhenriq.kotlintictactoefirebase
 
+import android.app.Notification
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
@@ -215,6 +216,7 @@ class MainActivity : AppCompatActivity() {
         playerOnline(userEmail.split("@")[0] + myEmail!!.split("@")[0])
     }
 
+    var number = 0
     private fun incomingCalls() {
         myRef.child("users").child(myEmail!!.split("@")[0]).child("request").addValueEventListener(object : ValueEventListener {
             override fun onCancelled(error: DatabaseError) {
@@ -229,6 +231,10 @@ class MainActivity : AppCompatActivity() {
                         for(key in td.keys) {
                             value = td[key] as String
                             edtFriendEmail.setText(value)
+
+                            val notifyMe = Notifications()
+                            notifyMe.notify(applicationContext, "$value: wanna play?", number)
+                            number ++
 
                             myRef.child("users").child(myEmail!!).child("request").setValue(true)
                             break
