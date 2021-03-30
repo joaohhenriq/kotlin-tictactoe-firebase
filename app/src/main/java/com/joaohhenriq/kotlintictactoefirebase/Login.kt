@@ -6,12 +6,14 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_login.*
 
 class Login : AppCompatActivity() {
 
     private var mAuth : FirebaseAuth? = null
+    private var dataBase = FirebaseDatabase.getInstance()
+    private var myRef = dataBase.reference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +35,13 @@ class Login : AppCompatActivity() {
             .addOnCompleteListener(this){
                 if(it.isSuccessful) {
                     Toast.makeText(applicationContext, "Successfuly loged", Toast.LENGTH_LONG).show()
+
+                    val currentUser = mAuth!!.currentUser
+
+                    if(currentUser != null) {
+                        myRef.child("users").child(currentUser.email.split("@")[0]).child("Request").setValue(currentUser.uid)
+                    }
+
                     loadMain()
                 } else {
                     Toast.makeText(applicationContext, "Failed to login", Toast.LENGTH_LONG).show()

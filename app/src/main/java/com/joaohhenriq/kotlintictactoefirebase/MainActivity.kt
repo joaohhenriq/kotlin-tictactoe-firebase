@@ -9,10 +9,20 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 import kotlin.collections.ArrayList
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import java.lang.Exception
+import kotlin.collections.HashMap
 
 class MainActivity : AppCompatActivity() {
 
     private var mFirebaseAnalytics: FirebaseAnalytics? = null
+    private var dataBase = FirebaseDatabase.getInstance()
+    private var myRef = dataBase.reference
+
+    private var myEmail: String? = null
 
     var activePlayer = 1
     var player1 = ArrayList<Int>()
@@ -25,6 +35,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
+
+        var b: Bundle = intent.extras!!
+        myEmail = b.getString("email")
+        incomingCalls()
     }
 
     fun btnClick(view: View) {
@@ -199,5 +213,41 @@ class MainActivity : AppCompatActivity() {
         }
 
         Toast.makeText(this, "Player1: $player1WinsCounts, Player2: $player2WinsCounts", Toast.LENGTH_LONG).show()
+    }
+
+    fun btnRequestEvent(view: View){
+        var userEmail = edtFriendEmail.text.toString()
+        myRef.child("users").child(userEmail.split("@")[0]).child("request").push().setValue(myEmail)
+
+    }
+
+    fun btnAcceptEvent(view: View) {
+        var userEmail = edtFriendEmail.text.toString()
+        myRef.child("users").child(userEmail.split("@")[0]).child("request").push().setValue(myEmail)
+    }
+
+    private fun incomingCalls() {
+        myRef.child("users").child(myEmail!!.split("@")[0]).child("request").addValueEventListener(object : ValueEventListener {
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                try {
+                    val td = snapshot.value as HashMap<String, Any>
+                    if(td != null) {
+                        var value: String
+                        for(key in td.keys) {
+                            value = td[key] as String
+                            edtFriendEmail.setText(value)
+
+                            myRef.child("users").child(myEmail!!).child("request").setValue(true)
+                            break
+                        }
+                    }
+                } catch (e: Exception){}
+            }
+
+        })
     }
 }
