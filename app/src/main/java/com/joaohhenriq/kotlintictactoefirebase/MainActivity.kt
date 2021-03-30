@@ -58,7 +58,7 @@ class MainActivity : AppCompatActivity() {
             R.id.btn9 -> cellId = 9
         }
 
-        playGame(cellId, btnSelected)
+        myRef.child("playerOnline").child(sessionId!!).child(cellId.toString()).setValue(myEmail)
     }
 
     fun playGame(cellId: Int, btnSelected: Button) {
@@ -67,7 +67,6 @@ class MainActivity : AppCompatActivity() {
             btnSelected.setBackgroundResource(R.color.red)
             player1.add(cellId)
             activePlayer = 2
-            autoplay()
         } else {
             btnSelected.text = "O"
             btnSelected.setBackgroundResource(R.color.yellow)
@@ -154,22 +153,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun autoplay() {
-        var emptyCells = ArrayList<Int>()
+    fun autoplay(cellId: Int) {
 
-        for (cellId in 1..9) {
-            if (!player1.contains(cellId) || !player2.contains(cellId)) {
-                emptyCells.add(cellId)
-            }
-        }
-
-        if(emptyCells.size == 0) {
-            restartGame()
-        }
-
-        var r = Random()
-        val randomIndex = r.nextInt(emptyCells.size)
-        val cellId = emptyCells[randomIndex]
 
         var btnSelected:Button
         btnSelected = when(cellId) {
@@ -219,11 +204,15 @@ class MainActivity : AppCompatActivity() {
         var userEmail = edtFriendEmail.text.toString()
         myRef.child("users").child(userEmail.split("@")[0]).child("request").push().setValue(myEmail)
 
+        playerOnline(myEmail!!.split("@")[0] + userEmail.split("@")[0])
+
     }
 
     fun btnAcceptEvent(view: View) {
         var userEmail = edtFriendEmail.text.toString()
         myRef.child("users").child(userEmail.split("@")[0]).child("request").push().setValue(myEmail)
+
+        playerOnline(userEmail.split("@")[0] + myEmail!!.split("@")[0])
     }
 
     private fun incomingCalls() {
@@ -243,6 +232,45 @@ class MainActivity : AppCompatActivity() {
 
                             myRef.child("users").child(myEmail!!).child("request").setValue(true)
                             break
+                        }
+                    }
+                } catch (e: Exception){}
+            }
+
+        })
+    }
+
+    var playerSymbol: String? = null
+    var sessionId: String? = null
+
+    fun playerOnline(sessionId: String) {
+        this.sessionId = sessionId
+
+        myRef.child("playerOnline").removeValue()
+
+        myRef.child("playerOnline").child(sessionId!!).addValueEventListener(object : ValueEventListener {
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+                try {
+                    player1.clear()
+                    player2.clear()
+
+                    val td = snapshot.value as HashMap<String, Any>
+                    if(td != null) {
+                        var value: String
+                        for(key in td.keys) {
+                            value = td[key] as String
+
+                            activePlayer = if(value != myEmail){
+                                if(playerSymbol === "X") 1 else 2
+                            } else {
+                                if(playerSymbol === "X") 2 else 1
+                            }
+
+                            autoplay(key.toInt())
                         }
                     }
                 } catch (e: Exception){}
